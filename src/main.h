@@ -38,10 +38,6 @@ private:
 
     void sendUniformsToGPU();
 
-    void createMesh();
-
-    void destroyMesh();
-
     void updateMatrices();
 
     GLuint loadTexture(const std::string& path);
@@ -55,6 +51,8 @@ private:
     void bindRenderTarget();
 
     void unbindRenderTarget();
+
+    void writeFBOToFile( GLuint iFBO, const std::string& _rstrFilePath );
 
 
     GPUProgram      m_GPUProgram;
@@ -109,7 +107,7 @@ private:
     void            RenderQuad();
 
     GLboolean       bloom; // Change with 'Space'
-    GLfloat         exposure; // Change with Q and E
+    GLfloat         exposure; // Change with Q and D
 };
 
 

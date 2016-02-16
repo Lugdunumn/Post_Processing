@@ -40,7 +40,7 @@ RenderingWindow::RenderingWindow()
     SCR_WIDTH = 0;
     SCR_HEIGHT = 0;
     bloom = true; // Change with 'Space'
-    exposure = 1.0f; // Change with Q and E
+    exposure = 1.0f; // Change with Q and D
 
     setAnimating(true);
 }
@@ -52,7 +52,6 @@ RenderingWindow::~RenderingWindow()
     m_GPUProgramBlur.destroy();
     m_GPUProgramBloomFinal.destroy();
 
-    //destroyMesh();
     destroyTextures();
     //destroyRenderTarget();
 }
@@ -63,22 +62,22 @@ void RenderingWindow::createRenderTarget()
     SCR_WIDTH = width() * retinaScale;
     SCR_HEIGHT =  height() * retinaScale;
     // Light sources
-    // - Positions
+    // Positions
     lightPositions.push_back(glm::vec3(0.0f, 0.5f, 1.5f)); // back light
     lightPositions.push_back(glm::vec3(-4.0f, 0.5f, -3.0f));
     lightPositions.push_back(glm::vec3(3.0f, 0.5f, 1.0f));
     lightPositions.push_back(glm::vec3(-.8f, 2.4f, -1.0f));
-    // - Colors
+    // Colors
     lightColors.push_back(glm::vec3(5.0f, 5.0f, 5.0f));
     lightColors.push_back(glm::vec3(5.5f, 0.0f, 0.0f));
     lightColors.push_back(glm::vec3(0.0f, 0.0f, 15.0f));
     lightColors.push_back(glm::vec3(0.0f, 1.5f, 0.0f));
 
-    // Set up floating point framebuffer to render scene to;
+    // Set up floating point framebuffer to render scene to
     glGenFramebuffers(1, &m_iHDRFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, m_iHDRFBO);
 
-    // - Create 2 floating point color buffers (1 for normal rendering, other for brightness treshold values)
+    // Create 2 floating point color buffers (1 for normal rendering, other for brightness treshold values)
         glGenTextures(2, m_iColorBuffersFBO);
         for (GLuint i = 0; i < 2; i++)
         {
@@ -86,17 +85,17 @@ void RenderingWindow::createRenderTarget()
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // We clamp to the edge as the blur filter would otherwise sample repeated texture values!
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // clamp to the edge as the blur filter would otherwise sample repeated texture values,
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  // for example the light would pass the window edge to another side.
             // attach texture to framebuffer
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, m_iColorBuffersFBO[i], 0);
         }
-        // - Create and attach depth buffer (renderbuffer)
+        // Create and attach depth buffer (renderbuffer)
         glGenRenderbuffers(1, &m_iDepthBufferFBO);
         glBindRenderbuffer(GL_RENDERBUFFER, m_iDepthBufferFBO);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_iDepthBufferFBO);
-        // - Tell OpenGL which color attachments we'll use (of this framebuffer) for rendering
+        // Tell OpenGL which color attachments will be used (of this framebuffer) for rendering
         GLuint attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
         glDrawBuffers(2, attachments);
         // - Finally check if framebuffer is complete
@@ -114,10 +113,10 @@ void RenderingWindow::createRenderTarget()
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // We clamp to the edge as the blur filter would otherwise sample repeated texture values!
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // clamp to the edge
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_iPingPongColorBuffersFBO[i], 0);
-            // Also check if framebuffers are complete (no need for depth buffer)
+            // check if framebuffers are complete
             if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
                 std::cout << "Framebuffer not complete!" << std::endl;
         }
@@ -233,7 +232,7 @@ void RenderingWindow::render()
 //    glEnable( GL_CULL_FACE );
 //    glCullFace( GL_BACK );
 
-    // 1. Render scene into floating point framebuffer
+    // Render scene into floating point framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, m_iHDRFBO);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_mtxCameraProjection = glm::perspective(45.0f, (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT, 0.1f, 100.0f);
@@ -245,7 +244,7 @@ void RenderingWindow::render()
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_iWoodTexture);
 
-        // - set lighting uniforms
+        // set lighting uniforms
         for (GLuint i = 0; i < lightPositions.size(); i++)
         {
             glUniform3fv(glGetUniformLocation(m_GPUProgram.getID(), ("lights[" + std::to_string(i) + "].Position").c_str()), 1, &lightPositions[i][0]);
@@ -253,13 +252,13 @@ void RenderingWindow::render()
         }
         glUniform3fv(glGetUniformLocation(m_GPUProgram.getID(), "viewPos"), 1, &m_vCameraPosition[0]);
 
-        // - create one large cube that acts as the floor
+        // create one large cube that acts as the floor
         m_mtxObjectWorld = glm::mat4();
         m_mtxObjectWorld = glm::translate(m_mtxObjectWorld, glm::vec3(0.0f, -1.0f, 0.0));
         m_mtxObjectWorld = glm::scale(m_mtxObjectWorld, glm::vec3(25.0f, 1.0f, 25.0f));
         glUniformMatrix4fv(glGetUniformLocation(m_GPUProgram.getID(), "model"), 1, GL_FALSE, glm::value_ptr(m_mtxObjectWorld));
         RenderCube();
-        // - then create multiple cubes as the scenery
+        // create multiple cubes
         glBindTexture(GL_TEXTURE_2D, m_iContainerTexture);
         m_mtxObjectWorld = glm::mat4();
         m_mtxObjectWorld = glm::translate(m_mtxObjectWorld, glm::vec3(0.0f, 1.5f, 0.0));
@@ -292,7 +291,7 @@ void RenderingWindow::render()
         m_mtxObjectWorld = glm::translate(m_mtxObjectWorld, glm::vec3(-3.0f, 0.0f, 0.0));
         glUniformMatrix4fv(glGetUniformLocation(m_GPUProgram.getID(), "model"), 1, GL_FALSE, glm::value_ptr(m_mtxObjectWorld));
         RenderCube();
-        // - finally show all the light sources as bright cubes
+        // show all the light sources as bright cubes
         glUseProgram(m_GPUProgramLight.getID());
         glUniformMatrix4fv(glGetUniformLocation(m_GPUProgramLight.getID(), "projection"), 1, GL_FALSE, glm::value_ptr(m_mtxCameraProjection));
         glUniformMatrix4fv(glGetUniformLocation(m_GPUProgramLight.getID(), "view"), 1, GL_FALSE, glm::value_ptr(m_mtxCameraView));
@@ -308,7 +307,7 @@ void RenderingWindow::render()
         }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // 2. Blur bright fragments w/ two-pass Gaussian Blur
+    // Blur bright fragments with two-pass Gaussian Blur
     GLboolean horizontal = true, first_iteration = true;
     GLuint amount = 10;
     m_GPUProgramBlur.bind();
@@ -324,13 +323,13 @@ void RenderingWindow::render()
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // 2. Now render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
+    // render floating point color buffer to 2D quad and tonemap HDR colors to default framebuffer's (clamped) color range
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_GPUProgramBloomFinal.bind();
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_iColorBuffersFBO[0]);
-    //glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_iPingPongColorBuffersFBO[!horizontal]);
 
@@ -370,7 +369,6 @@ void RenderingWindow::RenderQuad()
 //====================================================================================================================================
 void RenderingWindow::RenderCube()
 {
-    // Initialize (if necessary)
     if (m_iCubeVAO == 0)
     {
         GLfloat vertices[] = {
@@ -451,20 +449,56 @@ void RenderingWindow::keyPressEvent(QKeyEvent* _pEvent)
     {
         switch(_pEvent->key())
         {
-        case Qt::Key_W:
-            break;
-
-        case Qt::Key_S:
-            break;
-
-        case Qt::Key_A:
+        case Qt::Key_Q:
+            exposure -= 0.2;
             break;
 
         case Qt::Key_D:
+            exposure += 0.2;
+            break;
+        case Qt::Key_Space:
+            if (bloom == true)
+                bloom = false;
+            else
+                bloom = true;
+            break;
+        case Qt::Key_F:
+            writeFBOToFile(m_iHDRFBO, "HDRFBO.jpg");
+            writeFBOToFile(m_iDepthBufferFBO, "DepthBufferFBO.jpg");
+            writeFBOToFile(m_iColorBuffersFBO[0], "ColorBufferFBO1.jpg");
+            writeFBOToFile(m_iColorBuffersFBO[1], "ColorBufferFBO2.jpg");
+            writeFBOToFile(m_iPingPongFBO[0], "PingPongFBO1.jpg");
+            writeFBOToFile(m_iPingPongFBO[1], "PingPongFBO2.jpg");
+            writeFBOToFile(m_iPingPongColorBuffersFBO[0], "PingPongColorBuffersFBO1.jpg");
+            writeFBOToFile(m_iPingPongColorBuffersFBO[1], "PingPongColorBuffersFBO2.jpg");
             break;
         }
     }
 }
+//====================================================================================================================================
+void RenderingWindow::writeFBOToFile( GLuint iFBO, const std::string& _rstrFilePath )
+{
+    const float retinaScale = devicePixelRatio();
+    GLsizei W = width() * retinaScale;
+    GLsizei H = height() * retinaScale;
+
+    // this is called Pixel Transfer operation: http://www.opengl.org/wiki/Pixel_Transfer
+    uchar* aPixels = new uchar[ W * H * 4 ];
+    memset( aPixels, 0, W * H * 4 );
+
+    glBindFramebuffer( GL_FRAMEBUFFER, iFBO );
+    glReadPixels( 0,0,  W, H, GL_RGBA, GL_UNSIGNED_BYTE, aPixels );
+
+    glBindFramebuffer( GL_FRAMEBUFFER,  0 );
+
+    QImage qImage = QImage( aPixels, W, H, QImage::Format_ARGB32 );
+    // flip the image vertically, cause OpenGL has them upside down!
+    qImage = qImage.mirrored(false, true);
+    qImage = qImage.rgbSwapped();
+
+    qImage.save( _rstrFilePath.c_str() );
+}
+
 //====================================================================================================================================
 int main(int argc, char *argv[])
 {
